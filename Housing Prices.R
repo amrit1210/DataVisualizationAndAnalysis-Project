@@ -101,10 +101,3 @@ corelation_accuracy
 summary(lm(SalePrice ~ MSSubClass+MSZoning+Street+LotFrontage+LotArea+LotShape+LandContour+LotConfig+LandSlope+Neighborhood
            +Condition1+Condition2+BldgType+HouseStyle+OverallQual+OverallCond+YearBuilt+YearRemodAdd+RoofMatl
            +Exterior1st, data = house_training_data))
-
-#Alley, Utilities
-
-#Condition1 : alone, some values are significant. With others: Not significant
-#OverallCond and YearBuilt is highly dependent (together).
-#Roof Style we can ignore
-#RoofMatl : alone not significant. Some significance with yearBuilt
