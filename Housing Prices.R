@@ -89,14 +89,12 @@ summary(lm(SalePrice~Street+Neighborhood+OverallQual+GrLivArea+Exterior1st+Exter
 model_trained<-lm(SalePrice~Neighborhood+BsmtQual+OverallQual+GrLivArea+GarageCars+TotalBsmtSF, data = house_training_data)
 #Our model is traine . Now we will predict SalePrice on test dataset
 summary(model_trained)
-help("predict.lm")
 pred_lm<-predict.lm(model_trained, house_test_data.SalePrice)
 
 #Checking accuracy of our model
 actual_preds<-data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice, predicteds =  pred_lm))
 corelation_accuracy<- cor(actual_preds)
-corelation_accuracy
-?cbind
+
 #To check the significance value of the variables.  (All the variables are not included)
 summary(lm(SalePrice ~ MSSubClass+MSZoning+Street+LotFrontage+LotArea+LotShape+LandContour+LotConfig+LandSlope+Neighborhood
            +Condition1+Condition2+BldgType+HouseStyle+OverallQual+OverallCond+YearBuilt+YearRemodAdd+RoofMatl
