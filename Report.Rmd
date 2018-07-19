@@ -6,7 +6,7 @@ author:
 - Pratik Agarwal
 - Mayuri
 - Nofel Mahmood
-output: html_notebook
+output: pdf_document
 ---
 
 Install Pacman
