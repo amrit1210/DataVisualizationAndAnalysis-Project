@@ -4,7 +4,7 @@ subtitle: "Semester Project"
 author: 
 - Amrit Kaur
 - Pratik Agarwal
-- Mayuri
+- Mayuri Mendke
 - Nofel Mahmood
 output: pdf_document
 ---
@@ -16,7 +16,7 @@ library(pacman)
 
 Load all required packages
 ```{r}
-p_load(tidyverse, stringr, ggplot2, scales)
+p_load(tidyverse, stringr,lubridate, ggplot2, tseries, forecast, scales, party)
 
 house_training_data <- read.csv("./DataSet/train.csv")
 house_test_data <- read.csv("./DataSet/test.csv")
@@ -144,15 +144,18 @@ model_trained<-lm(SalePrice~Neighborhood+BsmtQual+OverallQual+GrLivArea+
                     GarageCars+TotalBsmtSF, data = house_training_data)
 #Our model is trained . Now we will predict SalePrice on test dataset
 summary(model_trained)
-pred_lm<-predict.lm(model_trained, house_test_data.SalePrice)
+house_test_data %>% head(5)
+pred_lm <- predict.lm(model_trained, house_test_data.SalePrice)
+house_test_data_with_predictions <- house_test_data.SalePrice %>% mutate(predictedSalePrice = pred_lm)
+colnames(house_test_data_with_predictions)
 ```
 
 Checking accuracy of our model
 ```{r}
 #Checking accuracy of our model
-actual_preds<-data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice, 
+actual_preds <- data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice, 
                                predicteds =  pred_lm))
-corelation_accuracy<- cor(actual_preds)
+corelation_accuracy <- cor(actual_preds)
 
 #To check the significance value of the variables.  (All the variables are not included)
 summary(lm(SalePrice ~ MSSubClass+MSZoning+Street+LotFrontage+LotArea+
@@ -161,5 +164,62 @@ summary(lm(SalePrice ~ MSSubClass+MSZoning+Street+LotFrontage+LotArea+
              OverallCond+YearBuilt+YearRemodAdd+RoofMatl+
              Exterior1st, data = house_training_data))
 
+```
+Time Series
+```{r}
+#timeseries object for Sales Price
+salePricets<-ts(actual_preds$predicteds,start=c(2001,1),end=c(2010,12),frequency = 4);
+
+
+#timeseries object for Sales Price and Selling Year
+yrSoldts<-ts(house_test_data_with_predictions$YrSold,start=c(2001,1),end=c(2010,12),frequency = 4);
+salePricets<-ts(house_test_data_with_predictions$predictedSalePrice,start=c(2001,1),end=c(2010,12),frequency = 4);
+
+#Checking for frequency data has been collected.
+frequency(salePricets);
+
+#checking for missing values
+sum(is.na(salePricets))
+
+#summary of the data
+summary(salePricets)
+
+#decomposing the data into trend, seasonal, regular and random components
+tsdata<-ts(salePricets,frequency = 4)
+ddata<-decompose(tsdata,"multiplicative")
+plot(ddata)
+
+#checking the original trend in data while performing linear regression.
+plot(salePricets)
+abline(reg=lm(salePricets~time(salePricets)))
+cycle(salePricets)
+
+#boxplot for quaterly data to analyse in which quater sales price is going up
+boxplot(salePricets ~cycle(salePricets, xlab="Date"))
+
+#checking for the best model
+priceModel<-auto.arima(salePricets)
+priceModel 
+
+#running with trace to compare the information criterion
+auto.arima(salePricets,ic="aic",trace= TRUE)
+
+
+#Using the model to forecast for next 5 years with 95% accuracy
+priceForecast<-forecast(priceModel,level=c(95),h=5*12)
+plot(priceForecast)
+```
+
+Clustering
+```{r}
+# Get Predicated Sale Price with Year Built
+sale_price_with_built_year <- house_test_data_with_predictions %>% select(YearBuilt, predictedSalePrice) %>% na.omit()
+
+cluster <- kmeans(sale_price_with_built_year, 3)$cluster
+cbind(sale_price_with_built_year, cluster) %>% ggplot((aes(x = YearBuilt, y = predictedSalePrice, color = factor(cluster)))) + geom_point()
+
+tree <- ctree(predictedSalePrice ~ ., data = sale_price_with_built_year,
+controls = ctree_control(minbucket = 100))
+plot(tree)
 ```
 
