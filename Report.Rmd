@@ -9,6 +9,17 @@ author:
 output: pdf_document
 ---
 
+# Dataset
+https://www.kaggle.com/c/house-prices-advanced-regression-techniques
+
+# Motivation
+The Dataset has 79 explanatory variables describing (almost) every aspect of residential homes in Ames, Iowa. The problem was to predict sale prices of the houses based on the variables. The problem was interesting to us because we had studied linear regression and other models to solve problems like this. 
+
+# Approach
+As there were a lot of variables we tried to first find out the ones which were influencing the house price on a higher level and then used them to build our linear model to predict house sale prices. After that we applied time series to forecast house prices for the next 10 years. In the end we applied clustering to group houses with respect to sale price (low, mid, high) and use inference tree to show sale prices with respect to years in which the particular house was built.
+
+# Exploration / Visualizations
+
 Install Pacman
 ```{r}
 library(pacman)
@@ -33,6 +44,9 @@ Combine both the training and test data. It will be easier for analysis. From no
 
 house_test_data.SalePrice <- 
   data.frame(SalePrice = rep(NA, nrow(house_test_data)), house_test_data[,])
+
+house_test_data.SalePrice <- 
+  data.frame(SalePrice = rep(NA, nrow(house_test_data)), house_test_data[,])
 house_combined <- rbind(house_training_data, house_test_data.SalePrice)
 
 dim(house_combined)  #Dimention of the combined dataset. 
@@ -50,12 +64,6 @@ training_data %>% ggplot(aes(x=SalePrice)) +
 
 Now we have to find which attributes are more significant for SalePrice.
 ```{r}
-
-#summary(lm(SalePrice ~ . , data = house_combined))   
-#This is giving error because some variables have less than 2 levels.
-#cor(house_combined)
-#As correlation works on numeric type only so we cant check this on entire dataset. 
-
 #We don't need ID. So drop ID column from house_combined
 house_training_data$Id <- NULL
 
@@ -68,7 +76,6 @@ cor.numeric.variables <- cor(house_training_data[, numeric.type.variables],
                              use="pairwise.complete.obs")
 #Lot of NA's . 
 #so we use="pairwise.complete.obs".
-#Need to replace them (with the mean values of the column would be a better option). 
 
 #sort the correlation with saleprice in decreasing order. 
 #So we will get the highly correlated variable at the top.
@@ -77,10 +84,8 @@ colnames(cor_sorted)<- c("values")
 
 #Select only high correlation
 CorHigh <- names(which(apply(cor_sorted, 1, function(x) abs(x)>0.5)))
-#cor.numeric.variables <- cor.numeric.variables[CorHigh, CorHigh]
-#sort(cor.numeric.variables[,'SalePrice'], decreasing = TRUE)
-#So we got "OverallQual" as the highly significant variable for Saleprice and after
-#that we "GrLivArea" and so on..
+#So we got "OverallQual" as the highly significant variable for Saleprice and after that 
+#we "GrLivArea" and so on..
 
 model_OverallQual<-lm(SalePrice~OverallQual, data = house_training_data)
 summary(model_OverallQual)
@@ -89,14 +94,15 @@ ggplot(house_training_data[!is.na(house_training_data$SalePrice),],
        geom_boxplot() + labs(x = "OverallQual", y = "SalePrice") + 
        scale_y_continuous(breaks= seq(0, 800000, by=100000), labels = comma)
 
-#We can Clearly see that increase in the overall quality of the house has increased
-#the saleprice of the house.
+#We can Clearly see that increase in the overall quality of the house has increased the 
+#saleprice of the house.
 house_training_data %>% ggplot(aes(x=OverallQual, y= SalePrice)) + 
                         geom_point() + 
                         geom_smooth(method = "lm") +
                         scale_y_continuous(breaks = seq(0,800000, by=100000))
 ```
-Our models.
+
+# Our models
 ```{r}
 
 model_GrLiveArea<-lm(SalePrice~GrLivArea, data = house_training_data)
@@ -110,7 +116,6 @@ ggplot(house_training_data[!is.na(house_training_data$SalePrice),],
 #bigger living area will have high sale price. 
 #The two dots at the bottom right seems to be the outliers.
 
-
 factor.type.variables.names<- which(sapply(house_training_data, is.factor))%>% names()
 model_Street_Neighborhood <- lm(SalePrice ~ Street+Neighborhood+GarageCond+
                                   KitchenQual+MiscFeature,
@@ -121,59 +126,52 @@ summary(model_Street_Neighborhood)
 #NeighborhoodCrawfor are most significant.
 #The model is very good because it has a high R value.
 
-summary(lm(SalePrice~Street+Neighborhood+OverallQual+
+lm(SalePrice~Street+Neighborhood+OverallQual+
              GrLivArea+Condition1+Condition2+
              SaleCondition+SaleType+Heating, 
-             data = house_training_data))
+             data = house_training_data)
 #Here, we saw Condition1, Condition2, Saletype, SaleCondition and Heating are not
 #that significant when grouped with Street and Neighbourhood. So we will not take
 #this model. Also OverallQual and GrLiveArea when added to Street and Neighborhood
 #are seen as significant for SalePrice. So we will group these 4 together and 
 #consider them to train our model for further prediction.
 
-summary(lm(SalePrice~Street+Neighborhood+OverallQual+GrLivArea+
+lm(SalePrice~Street+Neighborhood+OverallQual+GrLivArea+
              Exterior1st+Exterior2nd+GarageCars+GarageArea+
              BsmtQual+TotalBsmtSF+BsmtCond+FullBath+
-             BsmtFinType1+BsmtFinType2, data = house_training_data))
+             BsmtFinType1+BsmtFinType2, data = house_training_data)
 #BsmtQual, GarageCars and TotalBsmtSF are significant, while street became less
 #significant. 
 #So in our final model we are using Neighborhood, OverallQual, GrLiveArea,
 #GarageCars, BsmtCond, TotalBsmtSF for prediction on our test data.
 
-model_trained<-lm(SalePrice~Neighborhood+BsmtQual+OverallQual+GrLivArea+
+model_trained <- lm(SalePrice~Neighborhood+BsmtQual+OverallQual+GrLivArea+
                     GarageCars+TotalBsmtSF, data = house_training_data)
 #Our model is trained . Now we will predict SalePrice on test dataset
-summary(model_trained)
-house_test_data %>% head(5)
+model_trained
 pred_lm <- predict.lm(model_trained, house_test_data.SalePrice)
-house_test_data_with_predictions <- house_test_data.SalePrice %>% mutate(predictedSalePrice = pred_lm)
-colnames(house_test_data_with_predictions)
+house_test_data_with_predictions <- house_test_data.SalePrice %>%
+  mutate(predictedSalePrice = pred_lm)
 ```
 
 Checking accuracy of our model
 ```{r}
-#Checking accuracy of our model
 actual_preds <- data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice, 
                                predicteds =  pred_lm))
 corelation_accuracy <- cor(actual_preds)
-
-#To check the significance value of the variables.  (All the variables are not included)
-summary(lm(SalePrice ~ MSSubClass+MSZoning+Street+LotFrontage+LotArea+
-             LotShape+LandContour+LotConfig+LandSlope+Neighborhood+
-             Condition1+Condition2+BldgType+HouseStyle+OverallQual+
-             OverallCond+YearBuilt+YearRemodAdd+RoofMatl+
-             Exterior1st, data = house_training_data))
-
 ```
-Time Series
+
+# Time Series
 ```{r}
 #timeseries object for Sales Price
 salePricets<-ts(actual_preds$predicteds,start=c(2001,1),end=c(2010,12),frequency = 4);
 
 
 #timeseries object for Sales Price and Selling Year
-yrSoldts<-ts(house_test_data_with_predictions$YrSold,start=c(2001,1),end=c(2010,12),frequency = 4);
-salePricets<-ts(house_test_data_with_predictions$predictedSalePrice,start=c(2001,1),end=c(2010,12),frequency = 4);
+yrSoldts<-ts(house_test_data_with_predictions$YrSold,start=c(2001,1),
+             end=c(2010,12),frequency = 4);
+salePricets<-ts(house_test_data_with_predictions$predictedSalePrice,
+                start=c(2001,1),end=c(2010,12),frequency = 4);
 
 #Checking for frequency data has been collected.
 frequency(salePricets);
@@ -210,16 +208,21 @@ priceForecast<-forecast(priceModel,level=c(95),h=5*12)
 plot(priceForecast)
 ```
 
-Clustering
+# Clustering
 ```{r}
 # Get Predicated Sale Price with Year Built
-sale_price_with_built_year <- house_test_data_with_predictions %>% select(YearBuilt, predictedSalePrice) %>% na.omit()
+sale_price_with_built_year <- house_test_data_with_predictions %>%
+  select(YearBuilt, predictedSalePrice) %>% na.omit()
 
 cluster <- kmeans(sale_price_with_built_year, 3)$cluster
-cbind(sale_price_with_built_year, cluster) %>% ggplot((aes(x = YearBuilt, y = predictedSalePrice, color = factor(cluster)))) + geom_point()
+cbind(sale_price_with_built_year, cluster) %>% 
+  ggplot((aes(x = YearBuilt, y = predictedSalePrice, color = factor(cluster)))) + 
+  geom_point()
 
 tree <- ctree(predictedSalePrice ~ ., data = sale_price_with_built_year,
 controls = ctree_control(minbucket = 100))
 plot(tree)
 ```
 
+# Conclusion
+We saw that the variables which we used to build our linear model were effecting the sale price such as Neighborhood, BsmtQual, OverallQual,   GrLivArea, GarageCars, TotalBsmtSF. Then we used Time Series to forecast sale prices for the next 10 years. In the end we saw by applying k-means clustering that house prices with respect to the year they were built in can be clustered into high, low and mid sale prices. We can see that the most expensive houses can be found after 1980(year built) (approx).
