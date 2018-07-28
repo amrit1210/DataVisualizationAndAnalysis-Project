@@ -142,6 +142,8 @@ house_test_data_with_predictions <- house_test_data.SalePrice %>%
 # Time Series
 ```{r}
 #timeseries object for Sales Price
+actual_preds <- data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice,
+predicteds = pred_lm))
 salePricets<-ts(actual_preds$predicteds,start=c(2001,1),end=c(2010,12),frequency = 4);
 
 
@@ -203,4 +205,4 @@ plot(tree)
 ```
 
 # Conclusion
-We saw that the variables which we used to build our linear model were effecting the sale price such as Neighborhood, BsmtQual, OverallQual,   GrLivArea, GarageCars, TotalBsmtSF. Then we used Time Series to forecast sale prices for the next 10 years. In the end we saw by applying k-means clustering that house prices with respect to the year they were built in can be clustered into high, low and mid sale prices. We can see that the most expensive houses can be found after 1980(year built) (approx).
+We saw that the variables which we used to build our linear model were effecting the sale price on a higher level such as Neighborhood, BsmtQual, OverallQual,   GrLivArea, GarageCars, TotalBsmtSF. Then we used Time Series to forecast sale prices for the next 10 years. In the end we saw by applying k-means clustering that house prices with respect to the year they were built in can be clustered into high, low and mid sale prices. We can see that the most expensive houses can be found after 1980(year built) (approx).
