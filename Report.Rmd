@@ -3,7 +3,7 @@ title: "Data Visualization and Analysis"
 subtitle: "Semester Project"
 author: 
 - Amrit Kaur
-- Pratik Agarwal
+- Pratik Kumar Agarwal
 - Mayuri Mendke
 - Nofel Mahmood
 output: pdf_document
@@ -96,10 +96,7 @@ ggplot(house_training_data[!is.na(house_training_data$SalePrice),],
 
 #We can Clearly see that increase in the overall quality of the house has increased the 
 #saleprice of the house.
-house_training_data %>% ggplot(aes(x=OverallQual, y= SalePrice)) + 
-                        geom_point() + 
-                        geom_smooth(method = "lm") +
-                        scale_y_continuous(breaks = seq(0,800000, by=100000))
+
 ```
 
 # Our models
@@ -112,8 +109,7 @@ ggplot(house_training_data[!is.na(house_training_data$SalePrice),],
        geom_smooth(method = "lm") +  labs(x = "GrLivArea", y = "SalePrice") + 
        scale_y_continuous(breaks= seq(0, 800000, by=100000), labels = comma)
 #Next highly correlated variable was "GrLivArea" i.e ground living area square feet.
-#Which also makes sense as the house with
-#bigger living area will have high sale price. 
+#As the house with bigger living area will have high sale price. 
 #The two dots at the bottom right seems to be the outliers.
 
 factor.type.variables.names<- which(sapply(house_training_data, is.factor))%>% names()
@@ -125,40 +121,22 @@ summary(model_Street_Neighborhood)
 #SalesPrice of an house. The dummy Variables StreetPave,NeighborhoodCollgCr,
 #NeighborhoodCrawfor are most significant.
 #The model is very good because it has a high R value.
+#Similarly we checked for other variables.
 
-lm(SalePrice~Street+Neighborhood+OverallQual+
-             GrLivArea+Condition1+Condition2+
-             SaleCondition+SaleType+Heating, 
-             data = house_training_data)
-#Here, we saw Condition1, Condition2, Saletype, SaleCondition and Heating are not
-#that significant when grouped with Street and Neighbourhood. So we will not take
-#this model. Also OverallQual and GrLiveArea when added to Street and Neighborhood
-#are seen as significant for SalePrice. So we will group these 4 together and 
-#consider them to train our model for further prediction.
-
-lm(SalePrice~Street+Neighborhood+OverallQual+GrLivArea+
-             Exterior1st+Exterior2nd+GarageCars+GarageArea+
-             BsmtQual+TotalBsmtSF+BsmtCond+FullBath+
-             BsmtFinType1+BsmtFinType2, data = house_training_data)
-#BsmtQual, GarageCars and TotalBsmtSF are significant, while street became less
-#significant. 
 #So in our final model we are using Neighborhood, OverallQual, GrLiveArea,
 #GarageCars, BsmtCond, TotalBsmtSF for prediction on our test data.
 
 model_trained <- lm(SalePrice~Neighborhood+BsmtQual+OverallQual+GrLivArea+
                     GarageCars+TotalBsmtSF, data = house_training_data)
 #Our model is trained . Now we will predict SalePrice on test dataset
-model_trained
+summary(model_trained)
 pred_lm <- predict.lm(model_trained, house_test_data.SalePrice)
 house_test_data_with_predictions <- house_test_data.SalePrice %>%
   mutate(predictedSalePrice = pred_lm)
 ```
 
-Checking accuracy of our model
 ```{r}
-actual_preds <- data.frame(cbind(actuals=house_test_data.SalePrice$SalePrice, 
-                               predicteds =  pred_lm))
-corelation_accuracy <- cor(actual_preds)
+
 ```
 
 # Time Series
